@@ -1,0 +1,15 @@
+{
+  "appId": "com.esalehi.dopaminereset",
+  "appName": "ریست",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#ffffff"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#1F7A5A"
+    }
+  }
+}
