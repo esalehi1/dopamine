@@ -1,0 +1,82 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - agent/android-apk
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: Build installable debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Prepare PWA and native reminder bundle
+        run: npm run prepare:android
+
+      - name: Generate Capacitor Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Enable exact reminder permission
+        shell: python
+        run: |
+          from pathlib import Path
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text(encoding='utf-8')
+          permission = '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />'
+          if permission not in text:
+              text = text.replace('<application', f'    {permission}\n\n    <application', 1)
+          manifest.write_text(text, encoding='utf-8')
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean assembleDebug
+
+      - name: Prepare named APK
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/Dopamine-Reset-v1.0.0-debug.apk
+          sha256sum dist/Dopamine-Reset-v1.0.0-debug.apk > dist/SHA256SUMS.txt
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dopamine-reset-android-apk
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
