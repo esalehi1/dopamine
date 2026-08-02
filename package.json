@@ -1,0 +1,20 @@
+{
+  "name": "dopamine-reset-android",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:web": "node scripts/prepare-web.mjs",
+    "bundle:native": "esbuild native/native-adapter.js --bundle --format=iife --platform=browser --target=es2020 --outfile=www/native.js",
+    "prepare:android": "npm run prepare:web && npm run bundle:native"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
