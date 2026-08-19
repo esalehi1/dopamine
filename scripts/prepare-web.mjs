@@ -17,12 +17,17 @@ const appDirectory = entries.find((entry) => entry.isDirectory());
 if (!appDirectory) throw new Error('The uploaded PWA archive has no root directory.');
 
 await cp(path.join(extracted, appDirectory.name), webDir, { recursive: true });
+await cp(path.join(root, 'native', 'v2-features.js'), path.join(webDir, 'v2-features.js'));
+await cp(path.join(root, 'native', 'v2-features.css'), path.join(webDir, 'v2-features.css'));
 
 const indexPath = path.join(webDir, 'index.html');
 let html = await readFile(indexPath, 'utf8');
 const appScript = '<script src="app.js" defer></script>';
+const styleLink = '<link rel="stylesheet" href="styles.css" />';
 if (!html.includes(appScript)) throw new Error('Could not find app.js in index.html.');
-html = html.replace(appScript, '<script src="native.js" defer></script>\n  ' + appScript);
+if (!html.includes(styleLink)) throw new Error('Could not find styles.css in index.html.');
+html = html.replace(styleLink, `${styleLink}\n  <link rel="stylesheet" href="v2-features.css" />`);
+html = html.replace(appScript, `<script src="native.js" defer></script>\n  ${appScript}\n  <script src="v2-features.js" defer></script>`);
 await writeFile(indexPath, html, 'utf8');
 
-console.log('PWA extracted and native adapter injected.');
+console.log('PWA extracted; native adapter and v2 feature layer injected.');
